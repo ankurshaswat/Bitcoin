@@ -49,7 +49,7 @@ func (b *block) verifyTransactions() bool {
 		return false
 	}
 
-	// TODO: Check anything else at block level???  like nonce
+	// ? Check anything else at block level??? like nonce
 
 	return true
 }

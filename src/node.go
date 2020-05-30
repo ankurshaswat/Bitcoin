@@ -1,12 +1,16 @@
 package main
 
-import "log"
+import (
+	"crypto/rsa"
+	"log"
+)
 
 type node struct {
 	nodeID              string
 	receiveChannel      chan block
 	blockchain          []block
 	pendingTransactions []transaction // to be pushed onto next block
+	keyPair             *rsa.PrivateKey
 }
 
 func (n *node) mineCoin() {
@@ -23,8 +27,8 @@ func (n *node) mineCoin() {
 	n.blockchain = append(n.blockchain, block)
 	n.pendingTransactions = []transaction{}
 
-	// TODO: Broadcast new block to all nodes
-
+	// Broadcast new block to all nodes
+	broadcastBlock(block, n.nodeID)
 }
 
 func (n *node) addTransaction(tx transaction) {
@@ -54,7 +58,7 @@ func (n *node) getBalance(nodeID string) float32 {
 }
 
 func (n *node) verifyChain() bool {
-	// TODO: Add check of genesis block ?
+	// ? Add check of genesis block
 
 	// Verify all blocks on chain and transactions and hashes and order and nonces
 	for i := 1; i < len(n.blockchain); i++ {
@@ -69,4 +73,8 @@ func (n *node) verifyChain() bool {
 	}
 
 	return true
+}
+
+func (n *node) getPublicKey() *rsa.PublicKey {
+	return &n.keyPair.PublicKey
 }

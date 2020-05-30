@@ -25,7 +25,12 @@ func (t *transaction) getHash() string {
 }
 
 func (t *transaction) signTransaction(keyPair *rsa.PrivateKey) {
-	// TODO: check if public key is senders public key (probab write a function for node to get its public key)
+	// check if public key is senders public key (probab write a function for node to get its public key)
+	senderID := t.senderID
+	pubKeySender := getPublicKey(senderID)
+	if *pubKeySender != keyPair.PublicKey {
+		log.Fatal("Incosistent public key found while signing")
+	}
 
 	// Get hash of transaction and sign it with key
 	hash := t.getHash()
@@ -54,14 +59,14 @@ func (t *transaction) verifyTransaction() bool {
 		log.Fatal("No signature found")
 	}
 
-	// TODO: get public key of senderID
-	// pubKey :=
+	// get public key of senderID
+	pubKey := getPublicKey(t.senderID)
 
-	// TODO: verify signature with hash of transaction
-	// err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, t.getHash(), t.signature)
-	// if err != nil {
-	// return false
-	// }
+	// verify signature with hash of transaction
+	err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, []byte(t.getHash()), t.signature)
+	if err != nil {
+		return false
+	}
 
 	return true
 }
