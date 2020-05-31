@@ -15,7 +15,10 @@ type node struct {
 
 func (n *node) mineCoin() {
 	// Create a new transaction giving yourself reward and add to pending transactions
-	tx := createTransaction("", n.nodeID, MiningPrize)
+	tx, err := createTransaction("", n.nodeID, MiningPrize)
+	if err != nil {
+		log.Fatal("Error mining coin - creating transaction -", err)
+	}
 	n.pendingTransactions = append(n.pendingTransactions, tx)
 
 	// Create block with all pending transactions and mine to get Nonce
@@ -37,7 +40,11 @@ func (n *node) addTransaction(tx transaction) {
 		log.Fatal("Empty sender or receiver ID")
 	}
 
-	if !tx.verifyTransaction() {
+	txverified, err := tx.verifyTransaction()
+	if err != nil {
+		log.Fatal("Error in verifiying transaction - ", err)
+	}
+	if !txverified {
 		log.Fatal("Transaction verification failed")
 	}
 

@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // type treeBlockLeaf struct {
 // 	hash        string
 // 	left, right *transaction
@@ -64,23 +66,26 @@ func createMerkleTree(tList []transaction) treeBlock {
 func (tb *treeBlock) verifyTree() bool {
 
 	if tb.leaf {
+		verified, err := tb.leftT.verifyTransaction()
+		stringToHash := tb.leftT.getHash()
+
+		if err != nil {
+			fmt.Println("error - ", err)
+			return false
+		}
 
 		if tb.rightT != nil {
+			verify2, err := tb.rightT.verifyTransaction()
+			stringToHash = stringToHash + tb.rightT.getHash()
+			if err != nil {
+				fmt.Println("error - ", err)
+				return false
+			}
+			verified = verified && verify2
+		}
 
-			if !tb.leftT.verifyTransaction() || !tb.rightT.verifyTransaction() {
-				return false
-			}
-
-			if tb.hash != generateSHA256Hash(tb.leftT.getHash()+tb.rightT.getHash()) {
-				return false
-			}
-		} else {
-			if !tb.leftT.verifyTransaction() {
-				return false
-			}
-			if tb.hash != generateSHA256Hash(tb.leftT.getHash()) {
-				return false
-			}
+		if tb.hash != generateSHA256Hash(stringToHash) || !verified {
+			return false
 		}
 
 	} else {

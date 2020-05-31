@@ -47,16 +47,16 @@ func (t *transaction) signTransaction(keyPair *rsa.PrivateKey) {
 	return
 }
 
-func (t *transaction) verifyTransaction() bool {
+func (t *transaction) verifyTransaction() (bool, error) {
 
 	//  No from address means mining reward self added
 	// ? Are any further checks required here
 	if t.senderID == "" {
-		return true
+		return false, fmt.Errorf("Sender Id is empty")
 	}
 
 	if t.signature == nil {
-		log.Fatal("No signature found")
+		return false, fmt.Errorf("No signature found")
 	}
 
 	// get public key of senderID
@@ -65,12 +65,8 @@ func (t *transaction) verifyTransaction() bool {
 	// verify signature with hash of transaction
 	err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, []byte(t.getHash()), t.signature)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	return true
-}
-
-func createTransaction(senderID string, receiverID string, amount float32) transaction {
-	return transaction{senderID: senderID, receiverID: receiverID, amount: amount, timestamp: time.Now()}
+	return true, nil
 }
