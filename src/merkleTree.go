@@ -19,94 +19,58 @@ type treeBlock struct {
 // 	left,right *merkleTree
 // }
 
-func createMerkleTree(tList []transaction) treeBlock {
-
-	blockList := []treeBlock{}
-
-	for i := 0; i < len(tList); i += 2 {
-		trans1 := tList[i]
-		if i+1 == len(tList) {
-			// If only one left
-			hash := generateSHA256Hash(trans1.getHash())
-			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, hash: hash}
-			blockList = append(blockList, newLeafBlock)
-		} else {
-			// if more than one available
-			trans2 := tList[i+1]
-			hash := generateSHA256Hash(trans1.getHash() + trans2.getHash())
-			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, rightT: &trans2, hash: hash}
-			blockList = append(blockList, newLeafBlock)
-		}
-	}
-
-	for len(blockList) > 1 {
-		newBlockList := []treeBlock{}
-
-		for i := 0; i < len(blockList); i += 2 {
-			block1 := blockList[i]
-			if i+1 == len(blockList) {
-				// If only one left
-				hash := generateSHA256Hash(block1.hash)
-				newTreeBlock := treeBlock{leaf: false, left: &block1, hash: hash}
-				newBlockList = append(newBlockList, newTreeBlock)
-			} else {
-				// if two available
-				block2 := blockList[i+1]
-				hash := generateSHA256Hash(block1.hash + block2.hash)
-				newTreeBlock := treeBlock{leaf: false, left: &block1, right: &block2, hash: hash}
-				newBlockList = append(newBlockList, newTreeBlock)
-			}
-		}
-		blockList = newBlockList
-	}
-
-	return blockList[0]
-}
-
-func (tb *treeBlock) verifyTree() bool {
+func (tb *treeBlock) verifyTree() (bool, error) {
 
 	if tb.leaf {
 		verified, err := tb.leftT.verifyTransaction()
 		stringToHash := tb.leftT.getHash()
 
 		if err != nil {
-			fmt.Println("error - ", err)
-			return false
+			return false, err
 		}
 
 		if tb.rightT != nil {
 			verify2, err := tb.rightT.verifyTransaction()
 			stringToHash = stringToHash + tb.rightT.getHash()
 			if err != nil {
-				fmt.Println("error - ", err)
-				return false
+				return false, err
 			}
 			verified = verified && verify2
 		}
 
-		if tb.hash != generateSHA256Hash(stringToHash) || !verified {
-			return false
+		if !verified {
+			return false, fmt.Errorf("Sub tree transaction verification failed")
+		}
+
+		if tb.hash != generateSHA256Hash(stringToHash) {
+			return false, fmt.Errorf("leaf hash matching failed")
 		}
 
 	} else {
+		verified, err := tb.left.verifyTree()
+		stringToHash := tb.left.hash
+
+		if err != nil {
+			return false, err
+		}
+
 		if tb.right != nil {
-			if !tb.left.verifyTree() || !tb.right.verifyTree() {
-				return false
+			verify2, err := tb.right.verifyTree()
+			stringToHash = stringToHash + tb.right.hash
+			if err != nil {
+				return false, err
 			}
+			verified = verified && verify2
+		}
 
-			if tb.hash != generateSHA256Hash(tb.left.hash+tb.right.hash) {
-				return false
-			}
-		} else {
-			if !tb.left.verifyTree() {
-				return false
-			}
+		if !verified {
+			return false, fmt.Errorf("Sub tree verification failed")
+		}
 
-			if tb.hash != generateSHA256Hash(tb.left.hash) {
-				return false
-			}
+		if tb.hash != generateSHA256Hash(stringToHash) {
+			return false, fmt.Errorf("sub tree hash matching failed")
 		}
 	}
 
-	return true
+	return true, nil
 }

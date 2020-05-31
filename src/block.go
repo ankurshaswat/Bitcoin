@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -42,19 +43,18 @@ func (b *block) mine() {
 	b.nonce = nonce
 }
 
-func (b *block) verifyTransactions() bool {
+func (b *block) verifyTransactions() (bool, error) {
 
 	// Check merkle tree with all transactions checked recursively
-	if !b.transactionTree.verifyTree() {
-		return false
+	verified, err := b.transactionTree.verifyTree()
+	if err != nil {
+		return false, err
+	}
+	if !verified {
+		return false, fmt.Errorf("Failed to verify. Reason not known")
 	}
 
 	// ? Check anything else at block level??? like nonce
 
-	return true
-}
-
-func createBlock(transactions []transaction, prevHash string) block {
-	transactionTree := createMerkleTree(transactions)
-	return block{timestamp: time.Now(), prevHash: prevHash, transactionTree: transactionTree}
+	return true, nil
 }

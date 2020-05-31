@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"log"
 )
 
@@ -70,7 +71,12 @@ func (n *node) verifyChain() bool {
 	// Verify all blocks on chain and transactions and hashes and order and nonces
 	for i := 1; i < len(n.blockchain); i++ {
 		currBlock := n.blockchain[i]
-		if !currBlock.verifyTransactions() {
+		verified, err := currBlock.verifyTransactions()
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		if !verified {
 			return false
 		}
 

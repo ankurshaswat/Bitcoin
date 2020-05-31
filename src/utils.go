@@ -52,3 +52,58 @@ func debug(s string) {
 		fmt.Println(s)
 	}
 }
+
+func createMerkleTree(tList []transaction) treeBlock {
+
+	blockList := []treeBlock{}
+
+	for i := 0; i < len(tList); i += 2 {
+		trans1 := tList[i]
+		if i+1 == len(tList) {
+			// If only one left
+			hash := generateSHA256Hash(trans1.getHash())
+			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, hash: hash}
+			blockList = append(blockList, newLeafBlock)
+		} else {
+			// if more than one available
+			trans2 := tList[i+1]
+			hash := generateSHA256Hash(trans1.getHash() + trans2.getHash())
+			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, rightT: &trans2, hash: hash}
+			blockList = append(blockList, newLeafBlock)
+		}
+	}
+
+	for len(blockList) > 1 {
+		newBlockList := []treeBlock{}
+
+		for i := 0; i < len(blockList); i += 2 {
+			block1 := blockList[i]
+			if i+1 == len(blockList) {
+				// If only one left
+				hash := generateSHA256Hash(block1.hash)
+				newTreeBlock := treeBlock{leaf: false, left: &block1, hash: hash}
+				newBlockList = append(newBlockList, newTreeBlock)
+			} else {
+				// if two available
+				block2 := blockList[i+1]
+				hash := generateSHA256Hash(block1.hash + block2.hash)
+				newTreeBlock := treeBlock{leaf: false, left: &block1, right: &block2, hash: hash}
+				newBlockList = append(newBlockList, newTreeBlock)
+			}
+		}
+		blockList = newBlockList
+	}
+
+	return blockList[0]
+}
+
+func createBlock(transactions []transaction, prevHash string) block {
+	transactionTree := createMerkleTree(transactions)
+	return block{timestamp: time.Now(), prevHash: prevHash, transactionTree: transactionTree}
+}
+
+func createNode(nodeID string, receiveChan chan block, blockchain []block) node {
+	keyPair := generateKeyPair()
+	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain}
+	return n
+}
