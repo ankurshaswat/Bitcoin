@@ -4,15 +4,15 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
 	"time"
 )
 
 type transaction struct {
 	senderID, receiverID string
-	amount               float32
+	amount               float64
 	timestamp            time.Time
 	signature            []byte
 }
@@ -34,12 +34,15 @@ func (t *transaction) signTransaction(keyPair *rsa.PrivateKey) {
 
 	// Get hash of transaction and sign it with key
 	hash := t.getHash()
-
-	rng := rand.Reader
-	signature, err := rsa.SignPKCS1v15(rng, keyPair, crypto.SHA256, []byte(hash))
+	hashInBytes, err := hex.DecodeString(hash)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error from signing: %s\n", err)
-		return
+		log.Fatalf("Error in decoding hex %v err:%v", hash, err)
+	}
+	// fmt.Println(hash, hashInBytes)
+	rng := rand.Reader
+	signature, err := rsa.SignPKCS1v15(rng, keyPair, crypto.SHA256, hashInBytes)
+	if err != nil {
+		log.Fatalf("Error from signing: %s\n", err)
 	}
 
 	// Return after saving signature in transaction
@@ -62,8 +65,13 @@ func (t *transaction) verifyTransaction() (bool, error) {
 	// get public key of senderID
 	pubKey := getPublicKey(t.senderID)
 
+	hash := t.getHash()
+	hashInBytes, err := hex.DecodeString(hash)
+	if err != nil {
+		log.Fatalf("Error in decoding hex %v err:%v", hash, err)
+	}
 	// verify signature with hash of transaction
-	err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, []byte(t.getHash()), t.signature)
+	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, hashInBytes, t.signature)
 	if err != nil {
 		return false, err
 	}

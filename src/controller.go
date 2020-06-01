@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var nodeList []node
-
 func getPublicKey(nodeID string) *rsa.PublicKey {
 	i, err := strconv.ParseInt(nodeID, 10, 64)
 	if err != nil {

@@ -3,33 +3,44 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 )
 
 // RSAbitSize ... Bit size for key pair
 const (
-	RSAbitSize      = 10
+	RSAbitSize      = 2048
 	MiningDificulty = 2
 	MiningPrize     = 1
 )
 
 func generateSHA256Hash(s string) string {
-	h := sha1.New()
-	h.Write([]byte(s))
-	sha1Hash := hex.EncodeToString(h.Sum(nil))
+	message := []byte(s)
+	hashInBytes := sha256.Sum256(message)
+
+	// h := sha1.New()
+	// h.Write([]byte(s))
+	// hashInBytes := h.Sum(nil)
+	// fmt.Println(hashInBytes)
+	// fmt.Println(len(hashInBytes))
+	sha1Hash := hex.EncodeToString(hashInBytes[:])
+	// fmt.Println(sha1Hash)
 	return sha1Hash
 }
 
 func generateKeyPair() *rsa.PrivateKey {
 	reader := rand.Reader
-	key, _ := rsa.GenerateKey(reader, RSAbitSize)
+	key, err := rsa.GenerateKey(reader, RSAbitSize)
+	if err != nil {
+		log.Fatal("Unable to generate Rsa key - ", err)
+	}
 	return key
 }
 
-func createTransaction(senderID string, receiverID string, amount float32) (transaction, error) {
+func createTransaction(senderID string, receiverID string, amount float64) (transaction, error) {
 	debug(fmt.Sprintf("Creating transaction - senderID:%v receiverID:%v amount:%v", senderID, receiverID, amount))
 
 	if amount <= 0 {
@@ -98,18 +109,21 @@ func createMerkleTree(tList []transaction) merkleTree {
 }
 
 func createBlock(transactions []transaction, prevHash string) block {
-	transactionTree := createMerkleTree(transactions)
+	var transactionTree merkleTree
+	if len(transactions) != 0 {
+		transactionTree = createMerkleTree(transactions)
+	}
 	return block{timestamp: time.Now(), prevHash: prevHash, transactionTree: transactionTree}
 }
 
-func createNode(nodeID string, receiveChan chan block, blockchain []block) node {
+func createNode(nodeID string, receiveChan chan block, blockchain []block, nodeType int) node {
 	keyPair := generateKeyPair()
-	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain, selfBal: 0.0}
+	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain, selfBal: 0.0, nodeType: nodeType}
 	return n
 }
 
-func extractBalTransaction(tx *transaction, nodeID string) float32 {
-	var bal float32 = 0.0
+func extractBalTransaction(tx *transaction, nodeID string) float64 {
+	bal := 0.0
 	if tx.senderID == nodeID {
 		bal -= tx.amount
 	} else if tx.receiverID == nodeID {
@@ -118,8 +132,8 @@ func extractBalTransaction(tx *transaction, nodeID string) float32 {
 	return bal
 }
 
-func calcBalance(tree *merkleTree, nodeID string) float32 {
-	var sum float32 = 0.0
+func calcBalance(tree *merkleTree, nodeID string) float64 {
+	sum := 0.0
 
 	if tree.leaf {
 		sum += extractBalTransaction(tree.leftT, nodeID)

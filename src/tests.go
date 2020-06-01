@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func runTests() {
 	originalDebug := debugP
@@ -57,19 +59,24 @@ func txTests() {
 		fmt.Println("❌ Failed to catch error")
 	}
 
-	// fmt.Println("Trying to generate key pair")
-	// keyPair := generateKeyPair()
+	fmt.Println("Trying to generate key pair")
+	keyPair := generateKeyPair()
+	fmt.Println("Key generation working -", keyPair)
 
-	// fmt.Println("Trying to sign transaction")
-	// tx.signTransaction(keyPair)
+	fmt.Println("Creating node for signing tests")
+	n := createNode("0", make(chan block), []block{}, normal)
+	nodeList = append(nodeList, n)
 
-	// fmt.Println("Testing verifyTransaction")
-	// verified, err = tx.verifyTransaction()
-	// if err == nil {
-	// 	fmt.Println("✅ Successfully signed transaction")
-	// } else {
-	// 	fmt.Println("❌ Error in signing transaction - ", err)
-	// }
+	fmt.Println("Trying to sign transaction")
+	tx.signTransaction(nodeList[0].keyPair)
+
+	fmt.Println("Testing verifyTransaction")
+	verified, err = tx.verifyTransaction()
+	if err == nil {
+		fmt.Println("✅ Successfully signed transaction")
+	} else {
+		fmt.Println("❌ Error in signing transaction - ", err)
+	}
 
 	fmt.Println(verified)
 }
@@ -144,14 +151,16 @@ func blockTests() {
 func nodeTests() {
 	fmt.Print("\n-----Running tests for node module-----\n\n")
 
-	// TODO: Handle genesis block creation before writing rest of the tests
+	// Handle genesis block creation before writing rest of the tests
+	fmt.Println("Creating genesis block")
+	testGenBlock := createBlock([]transaction{}, "")
 
 	nodeID := "0"
 	receiveChannel := make(chan block, 10)
-	blockChain := []block{}
+	blockChain := []block{testGenBlock}
 
-	fmt.Println("Creating Node")
-	n := createNode(nodeID, receiveChannel, blockChain)
+	fmt.Println("Creating Normal Node")
+	n := createNode(nodeID, receiveChannel, blockChain, normal)
 	fmt.Println("node created - ", n)
 
 	fmt.Println("Mining coin")
@@ -163,11 +172,13 @@ func nodeTests() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println("Trying to add unsigned transaction")
 	n.addTransaction(tx)
 
-	fmt.Println("Getting public key of node")
-	pbKey := n.getPublicKey()
-	fmt.Println("Public key of node - ", pbKey)
+	// fmt.Println("Getting public key of node")
+	// pbKey := n.getPublicKey()
+	// fmt.Println("Public key of node - ", pbKey)
 
 	// fmt.Println("Verifying chain of blocks of node")
 

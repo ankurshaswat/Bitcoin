@@ -6,14 +6,23 @@ import (
 	"log"
 )
 
+// Node type
+const (
+	normal           = iota
+	malicious        = iota
+	smartSingleUse   = iota
+	smartRepeatedUse = iota
+)
+
 type node struct {
-	nodeID              string
-	receiveChannel      chan block
-	cmdChannel          chan msg
-	blockchain          []block
-	pendingTransactions []transaction // to be pushed onto next block
-	keyPair             *rsa.PrivateKey
-	selfBal             float32
+	nodeID                  string
+	receiveChannel          chan block
+	cmdChannel              chan msg
+	blockchain              []block
+	pendingTransactions     []transaction // to be pushed onto next block
+	keyPair                 *rsa.PrivateKey
+	selfBal, smartBalTarget float64
+	nodeType                int
 }
 
 func (n *node) mineCoin() {
@@ -66,12 +75,12 @@ func (n *node) addTransaction(tx transaction) {
 	n.pendingTransactions = append(n.pendingTransactions, tx)
 }
 
-func (n *node) getBalance(nodeID string) float32 {
+func (n *node) getBalance(nodeID string) float64 {
 	if nodeID == n.nodeID {
 		return n.selfBal
 	}
 
-	var bal float32 = 0.0
+	bal := 0.0
 	// Go over all blocks and all transactions to generate final balance of a node
 	for _, b := range n.blockchain {
 		bal += calcBalance(&b.transactionTree, nodeID)
@@ -130,6 +139,16 @@ func (n *node) startNode() {
 			fmt.Println(msg1)
 		case newBlock := <-n.receiveChannel:
 			fmt.Println(newBlock)
+		}
+
+		if n.nodeType == smartSingleUse || n.nodeType == smartRepeatedUse {
+			if n.selfBal >= n.smartBalTarget {
+				// TODO: Add required transaction here
+			}
+
+			if n.nodeType == smartSingleUse {
+				n.nodeType = normal
+			}
 		}
 	}
 
