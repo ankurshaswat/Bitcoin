@@ -7,10 +7,10 @@ import "fmt"
 // 	left, right *transaction
 // }
 
-type treeBlock struct {
+type merkleTree struct {
 	hash          string
 	leaf          bool
-	left, right   *treeBlock
+	left, right   *merkleTree
 	leftT, rightT *transaction
 }
 
@@ -19,19 +19,19 @@ type treeBlock struct {
 // 	left,right *merkleTree
 // }
 
-func (tb *treeBlock) verifyTree() (bool, error) {
+func (tree *merkleTree) verifyTree() (bool, error) {
 
-	if tb.leaf {
-		verified, err := tb.leftT.verifyTransaction()
-		stringToHash := tb.leftT.getHash()
+	if tree.leaf {
+		verified, err := tree.leftT.verifyTransaction()
+		stringToHash := tree.leftT.getHash()
 
 		if err != nil {
 			return false, err
 		}
 
-		if tb.rightT != nil {
-			verify2, err := tb.rightT.verifyTransaction()
-			stringToHash = stringToHash + tb.rightT.getHash()
+		if tree.rightT != nil {
+			verify2, err := tree.rightT.verifyTransaction()
+			stringToHash = stringToHash + tree.rightT.getHash()
 			if err != nil {
 				return false, err
 			}
@@ -42,21 +42,21 @@ func (tb *treeBlock) verifyTree() (bool, error) {
 			return false, fmt.Errorf("Sub tree transaction verification failed")
 		}
 
-		if tb.hash != generateSHA256Hash(stringToHash) {
+		if tree.hash != generateSHA256Hash(stringToHash) {
 			return false, fmt.Errorf("leaf hash matching failed")
 		}
 
 	} else {
-		verified, err := tb.left.verifyTree()
-		stringToHash := tb.left.hash
+		verified, err := tree.left.verifyTree()
+		stringToHash := tree.left.hash
 
 		if err != nil {
 			return false, err
 		}
 
-		if tb.right != nil {
-			verify2, err := tb.right.verifyTree()
-			stringToHash = stringToHash + tb.right.hash
+		if tree.right != nil {
+			verify2, err := tree.right.verifyTree()
+			stringToHash = stringToHash + tree.right.hash
 			if err != nil {
 				return false, err
 			}
@@ -67,7 +67,7 @@ func (tb *treeBlock) verifyTree() (bool, error) {
 			return false, fmt.Errorf("Sub tree verification failed")
 		}
 
-		if tb.hash != generateSHA256Hash(stringToHash) {
+		if tree.hash != generateSHA256Hash(stringToHash) {
 			return false, fmt.Errorf("sub tree hash matching failed")
 		}
 	}

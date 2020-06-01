@@ -11,7 +11,7 @@ type block struct {
 	timestamp       time.Time
 	nonce           int
 	prevHash, hash  string
-	transactionTree treeBlock
+	transactionTree merkleTree
 }
 
 func (b *block) createHashCustom(nonce int) string {
@@ -43,6 +43,24 @@ func (b *block) mine() {
 	b.nonce = nonce
 }
 
+func (b *block) verifyBlock() (bool, error) {
+
+	verified, err := b.verifyTransactions()
+	if err != nil {
+		return false, err
+	}
+	if !verified {
+		return false, fmt.Errorf("Failed to verify at block level")
+	}
+
+	// // Check anything else at block level??? like nonce
+	if b.createHash() != b.hash {
+		return false, fmt.Errorf("Block hash does not match")
+	}
+
+	return true, nil
+}
+
 func (b *block) verifyTransactions() (bool, error) {
 
 	// Check merkle tree with all transactions checked recursively
@@ -53,8 +71,6 @@ func (b *block) verifyTransactions() (bool, error) {
 	if !verified {
 		return false, fmt.Errorf("Failed to verify. Reason not known")
 	}
-
-	// ? Check anything else at block level??? like nonce
 
 	return true, nil
 }

@@ -53,41 +53,41 @@ func debug(s string) {
 	}
 }
 
-func createMerkleTree(tList []transaction) treeBlock {
+func createMerkleTree(tList []transaction) merkleTree {
 
-	blockList := []treeBlock{}
+	blockList := []merkleTree{}
 
 	for i := 0; i < len(tList); i += 2 {
 		trans1 := tList[i]
 		if i+1 == len(tList) {
 			// If only one left
 			hash := generateSHA256Hash(trans1.getHash())
-			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, hash: hash}
+			newLeafBlock := merkleTree{leaf: true, leftT: &trans1, hash: hash}
 			blockList = append(blockList, newLeafBlock)
 		} else {
 			// if more than one available
 			trans2 := tList[i+1]
 			hash := generateSHA256Hash(trans1.getHash() + trans2.getHash())
-			newLeafBlock := treeBlock{leaf: true, leftT: &trans1, rightT: &trans2, hash: hash}
+			newLeafBlock := merkleTree{leaf: true, leftT: &trans1, rightT: &trans2, hash: hash}
 			blockList = append(blockList, newLeafBlock)
 		}
 	}
 
 	for len(blockList) > 1 {
-		newBlockList := []treeBlock{}
+		newBlockList := []merkleTree{}
 
 		for i := 0; i < len(blockList); i += 2 {
 			block1 := blockList[i]
 			if i+1 == len(blockList) {
 				// If only one left
 				hash := generateSHA256Hash(block1.hash)
-				newTreeBlock := treeBlock{leaf: false, left: &block1, hash: hash}
+				newTreeBlock := merkleTree{leaf: false, left: &block1, hash: hash}
 				newBlockList = append(newBlockList, newTreeBlock)
 			} else {
 				// if two available
 				block2 := blockList[i+1]
 				hash := generateSHA256Hash(block1.hash + block2.hash)
-				newTreeBlock := treeBlock{leaf: false, left: &block1, right: &block2, hash: hash}
+				newTreeBlock := merkleTree{leaf: false, left: &block1, right: &block2, hash: hash}
 				newBlockList = append(newBlockList, newTreeBlock)
 			}
 		}
@@ -104,6 +104,34 @@ func createBlock(transactions []transaction, prevHash string) block {
 
 func createNode(nodeID string, receiveChan chan block, blockchain []block) node {
 	keyPair := generateKeyPair()
-	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain}
+	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain, selfBal: 0.0}
 	return n
+}
+
+func extractBalTransaction(tx *transaction, nodeID string) float32 {
+	var bal float32 = 0.0
+	if tx.senderID == nodeID {
+		bal -= tx.amount
+	} else if tx.receiverID == nodeID {
+		bal += tx.amount
+	}
+	return bal
+}
+
+func calcBalance(tree *merkleTree, nodeID string) float32 {
+	var sum float32 = 0.0
+
+	if tree.leaf {
+		sum += extractBalTransaction(tree.leftT, nodeID)
+		if tree.rightT != nil {
+			sum += extractBalTransaction(tree.rightT, nodeID)
+		}
+	} else {
+		sum += calcBalance(tree.left, nodeID)
+		if tree.right != nil {
+			sum += calcBalance(tree.right, nodeID)
+		}
+	}
+
+	return sum
 }
