@@ -2,10 +2,11 @@ package main
 
 // Msg Type enum
 const (
-	mine     = iota
-	transact = iota
+	transactionBroadcast = iota
+	// mine     = iota
 )
 
 type msg struct {
 	msgType int
+	tx      transaction
 }

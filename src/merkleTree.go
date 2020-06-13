@@ -74,3 +74,21 @@ func (tree *merkleTree) verifyTree() (bool, error) {
 
 	return true, nil
 }
+
+func (tree *merkleTree) getTxList() []transaction {
+	txList := []transaction{}
+
+	if !tree.leaf {
+		txList = tree.left.getTxList()
+		if tree.right != nil {
+			txList = append(txList, tree.right.getTxList()...)
+		}
+	} else {
+		txList = append(txList, *tree.leftT)
+		if tree.rightT != nil {
+			txList = append(txList, *tree.rightT)
+		}
+	}
+
+	return txList
+}

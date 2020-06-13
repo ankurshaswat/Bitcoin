@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -19,7 +20,7 @@ type transaction struct {
 
 func (t *transaction) getHash() string {
 	amountString := fmt.Sprintf("%f", t.amount)
-	s := t.senderID + t.receiverID + amountString
+	s := t.senderID + t.receiverID + amountString + strconv.FormatInt(t.timestamp.UnixNano(), 10)
 	hash := generateSHA256Hash(s)
 	return hash
 }
@@ -29,20 +30,20 @@ func (t *transaction) signTransaction(keyPair *rsa.PrivateKey) {
 	senderID := t.senderID
 	pubKeySender := getPublicKey(senderID)
 	if *pubKeySender != keyPair.PublicKey {
-		log.Fatal("Incosistent public key found while signing")
+		log.Panic("Incosistent public key found while signing")
 	}
 
 	// Get hash of transaction and sign it with key
 	hash := t.getHash()
 	hashInBytes, err := hex.DecodeString(hash)
 	if err != nil {
-		log.Fatalf("Error in decoding hex %v err:%v", hash, err)
+		log.Panicf("Error in decoding hex %v err:%v", hash, err)
 	}
-	// fmt.Println(hash, hashInBytes)
+	// log.Println(hash, hashInBytes)
 	rng := rand.Reader
 	signature, err := rsa.SignPKCS1v15(rng, keyPair, crypto.SHA256, hashInBytes)
 	if err != nil {
-		log.Fatalf("Error from signing: %s\n", err)
+		log.Panicf("Error from signing: %s\n", err)
 	}
 
 	// Return after saving signature in transaction
@@ -55,7 +56,8 @@ func (t *transaction) verifyTransaction() (bool, error) {
 	//  No from address means mining reward self added
 	// ? Are any further checks required here
 	if t.senderID == "" {
-		return false, fmt.Errorf("Sender Id is empty")
+		return true, nil
+		// return false, fmt.Errorf("Sender Id is empty")
 	}
 
 	if t.signature == nil {
@@ -68,7 +70,7 @@ func (t *transaction) verifyTransaction() (bool, error) {
 	hash := t.getHash()
 	hashInBytes, err := hex.DecodeString(hash)
 	if err != nil {
-		log.Fatalf("Error in decoding hex %v err:%v", hash, err)
+		log.Panicf("Error in decoding hex %v err:%v", hash, err)
 	}
 	// verify signature with hash of transaction
 	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, hashInBytes, t.signature)

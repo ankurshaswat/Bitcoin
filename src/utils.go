@@ -5,16 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"log"
-	"time"
-)
-
-// RSAbitSize ... Bit size for key pair
-const (
-	RSAbitSize      = 2048
-	MiningDificulty = 2
-	MiningPrize     = 1
 )
 
 func generateSHA256Hash(s string) string {
@@ -24,43 +15,25 @@ func generateSHA256Hash(s string) string {
 	// h := sha1.New()
 	// h.Write([]byte(s))
 	// hashInBytes := h.Sum(nil)
-	// fmt.Println(hashInBytes)
-	// fmt.Println(len(hashInBytes))
+	// log.Println(hashInBytes)
+	// log.Println(len(hashInBytes))
 	sha1Hash := hex.EncodeToString(hashInBytes[:])
-	// fmt.Println(sha1Hash)
+	// log.Println(sha1Hash)
 	return sha1Hash
 }
 
 func generateKeyPair() *rsa.PrivateKey {
 	reader := rand.Reader
-	key, err := rsa.GenerateKey(reader, RSAbitSize)
+	key, err := rsa.GenerateKey(reader, rsaBitSize)
 	if err != nil {
-		log.Fatal("Unable to generate Rsa key - ", err)
+		log.Panic("Unable to generate Rsa key - ", err)
 	}
 	return key
 }
 
-func createTransaction(senderID string, receiverID string, amount float64) (transaction, error) {
-	debug(fmt.Sprintf("Creating transaction - senderID:%v receiverID:%v amount:%v", senderID, receiverID, amount))
-
-	if amount <= 0 {
-		return transaction{}, fmt.Errorf("Wrong Amount Passed %v", amount)
-	}
-
-	if receiverID == "" {
-		return transaction{}, fmt.Errorf("Empty receiver ID")
-	}
-
-	if senderID == receiverID {
-		return transaction{}, fmt.Errorf("Sender and receiver id cannot be same %v", senderID)
-	}
-
-	return transaction{senderID: senderID, receiverID: receiverID, amount: amount, timestamp: time.Now()}, nil
-}
-
 func debug(s string) {
 	if debugP {
-		fmt.Println(s)
+		log.Println(s)
 	}
 }
 
@@ -108,20 +81,6 @@ func createMerkleTree(tList []transaction) merkleTree {
 	return blockList[0]
 }
 
-func createBlock(transactions []transaction, prevHash string) block {
-	var transactionTree merkleTree
-	if len(transactions) != 0 {
-		transactionTree = createMerkleTree(transactions)
-	}
-	return block{timestamp: time.Now(), prevHash: prevHash, transactionTree: transactionTree}
-}
-
-func createNode(nodeID string, receiveChan chan block, blockchain []block, nodeType int) node {
-	keyPair := generateKeyPair()
-	n := node{nodeID: nodeID, keyPair: keyPair, receiveChannel: receiveChan, blockchain: blockchain, selfBal: 0.0, nodeType: nodeType}
-	return n
-}
-
 func extractBalTransaction(tx *transaction, nodeID string) float64 {
 	bal := 0.0
 	if tx.senderID == nodeID {
@@ -148,4 +107,15 @@ func calcBalance(tree *merkleTree, nodeID string) float64 {
 	}
 
 	return sum
+}
+
+func createBalanceCopy(original map[string]float64) map[string]float64 {
+	newMap := make(map[string]float64)
+
+	// Copy from the original map to the target map
+	for key, value := range original {
+		newMap[key] = value
+	}
+
+	return newMap
 }

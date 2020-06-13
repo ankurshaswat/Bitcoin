@@ -24,9 +24,16 @@ func (b *block) createHash() string {
 }
 
 func (b *block) checkProofOfWork(hash string) bool {
-	subString := hash[0:MiningDificulty]
-	correct := strings.Repeat("0", MiningDificulty)
+	subString := hash[0:miningDificulty]
+	correct := strings.Repeat("0", miningDificulty)
 	return subString == correct
+}
+
+// mineSingleTry increments nonce by one and checks if it satisfies work criterion
+func (b *block) mineSingleTry() bool {
+	b.nonce++
+	b.hash = b.createHash()
+	return b.checkProofOfWork(b.hash)
 }
 
 func (b *block) mine() {
