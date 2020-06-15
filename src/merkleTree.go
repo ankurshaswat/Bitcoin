@@ -23,7 +23,7 @@ func (tree *merkleTree) verifyTree() (bool, error) {
 
 	if tree.leaf {
 		verified, err := tree.leftT.verifyTransaction()
-		stringToHash := tree.leftT.getHash()
+		stringToHash := tree.leftT.hash
 
 		if err != nil {
 			return false, err
@@ -31,7 +31,7 @@ func (tree *merkleTree) verifyTree() (bool, error) {
 
 		if tree.rightT != nil {
 			verify2, err := tree.rightT.verifyTransaction()
-			stringToHash = stringToHash + tree.rightT.getHash()
+			stringToHash = stringToHash + tree.rightT.hash
 			if err != nil {
 				return false, err
 			}

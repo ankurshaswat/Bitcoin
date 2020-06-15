@@ -173,8 +173,10 @@ func nodeTests() {
 		log.Println(err)
 	}
 
-	log.Println("Trying to add unsigned transaction")
-	n.addTransaction(tx)
+	log.Println(tx)
+
+	// log.Println("Trying to add unsigned transaction")
+	// n.addTransaction(tx)
 
 	// log.Println("Getting public key of node")
 	// pbKey := n.getPublicKey()

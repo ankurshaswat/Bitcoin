@@ -16,6 +16,7 @@ type transaction struct {
 	amount               float64
 	timestamp            time.Time
 	signature            []byte
+	hash                 string
 }
 
 func (t *transaction) getHash() string {
@@ -34,7 +35,7 @@ func (t *transaction) signTransaction(keyPair *rsa.PrivateKey) {
 	}
 
 	// Get hash of transaction and sign it with key
-	hash := t.getHash()
+	hash := t.hash
 	hashInBytes, err := hex.DecodeString(hash)
 	if err != nil {
 		log.Panicf("Error in decoding hex %v err:%v", hash, err)
@@ -68,6 +69,11 @@ func (t *transaction) verifyTransaction() (bool, error) {
 	pubKey := getPublicKey(t.senderID)
 
 	hash := t.getHash()
+
+	if hash != t.hash {
+		log.Panicf("Saved hash not matching")
+	}
+
 	hashInBytes, err := hex.DecodeString(hash)
 	if err != nil {
 		log.Panicf("Error in decoding hex %v err:%v", hash, err)

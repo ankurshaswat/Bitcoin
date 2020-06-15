@@ -20,15 +20,17 @@ func createTransaction(senderID string, receiverID string, amount float64) (tran
 		return transaction{}, fmt.Errorf("Sender and receiver id cannot be same %v", senderID)
 	}
 
-	return transaction{senderID: senderID, receiverID: receiverID, amount: amount, timestamp: time.Now()}, nil
+	tx := transaction{senderID: senderID, receiverID: receiverID, amount: amount, timestamp: time.Now()}
+	tx.hash = tx.getHash()
+
+	return tx, nil
 }
 
 func broadcastTransaction(t transaction, selfID string) {
 	for i := 0; i < len(nodeList); i++ {
 		nodeInstance := &nodeList[i]
 		if nodeInstance.nodeID != selfID {
-			// txMsg := msg{msgType: transactionBroadcast, tx: t}
-			// nodeInstance.cmdChannel <- txMsg
+
 		}
 	}
 }

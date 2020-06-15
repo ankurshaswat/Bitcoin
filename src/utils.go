@@ -45,13 +45,13 @@ func createMerkleTree(tList []transaction) merkleTree {
 		trans1 := tList[i]
 		if i+1 == len(tList) {
 			// If only one left
-			hash := generateSHA256Hash(trans1.getHash())
+			hash := generateSHA256Hash(trans1.hash)
 			newLeafBlock := merkleTree{leaf: true, leftT: &trans1, hash: hash}
 			blockList = append(blockList, newLeafBlock)
 		} else {
 			// if more than one available
 			trans2 := tList[i+1]
-			hash := generateSHA256Hash(trans1.getHash() + trans2.getHash())
+			hash := generateSHA256Hash(trans1.hash + trans2.hash)
 			newLeafBlock := merkleTree{leaf: true, leftT: &trans1, rightT: &trans2, hash: hash}
 			blockList = append(blockList, newLeafBlock)
 		}
