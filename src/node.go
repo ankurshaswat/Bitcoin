@@ -255,6 +255,29 @@ func (n *node) removePendingTx(tx transaction) bool {
 
 }
 
+func (n *node) createBroadcastTx(recID string, amount float64) {
+
+	tx, err := createTransaction(n.nodeID, recID, amount)
+	if err != nil {
+		log.Panicln("Error in creating new tx to broadcast - ", err)
+	}
+
+	tx.signTransaction(n.keyPair)
+
+	n.Lock()
+	defer n.Unlock()
+
+	if n.balances[n.nodeID] < amount {
+		log.Panicln("Trying to create transaction with less balance")
+	}
+
+	n.balances[n.nodeID] -= amount
+	n.balances[recID] += amount
+	n.pendingTransactions = append(n.pendingTransactions, tx)
+
+	broadcastTransaction(tx, n.nodeID)
+}
+
 func (n *node) verifyChain() bool {
 	// ? Add check of genesis block
 	// TODO: Add checks of balances here
