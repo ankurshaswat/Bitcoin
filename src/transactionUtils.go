@@ -30,7 +30,7 @@ func broadcastTransaction(t transaction, selfID string) {
 	for i := 0; i < len(nodeList); i++ {
 		nodeInstance := &nodeList[i]
 		if nodeInstance.nodeID != selfID {
-
+			go nodeInstance.receiveTransaction(t)
 		}
 	}
 }

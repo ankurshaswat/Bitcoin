@@ -42,6 +42,7 @@ func (n *node) smartContractExecute() {
 	n.balances[tx.senderID] -= tx.amount
 	n.balances[tx.receiverID] += tx.amount
 
+	n.pendingTransactions = append(n.pendingTransactions, tx)
 	broadcastTransaction(tx, n.nodeID)
 
 	if n.nodeType == smartSingleUse {
